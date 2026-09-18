@@ -1,0 +1,5 @@
+.DS_Store
+.generated/
+.venv/
+__pycache__/
+*.py[cod]
