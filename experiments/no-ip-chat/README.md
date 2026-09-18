@@ -23,3 +23,5 @@ begins with checkpoint 1 rather than importing the discarded feasibility spike.
 
 - [01 — First frame](checkpoints/01-first-frame.md): Alice sends Bob one custom
   Ethernet frame through a direct virtual cable without IP.
+- [02 — Two computers chat](checkpoints/02-two-computers-chat.md): Alice and Bob
+  exchange repeated messages in both directions over that same cable.
