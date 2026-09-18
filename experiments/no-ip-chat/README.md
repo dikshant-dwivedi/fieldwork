@@ -16,6 +16,10 @@ IPv6 addresses.
 4. Add Carol and discover peers through broadcast frames.
 5. Use broadcast for discovery and learned unicast for conversation.
 
-Every checkpoint will be independently runnable. The implementation has not
-started yet; this directory currently records only the experiment boundary and
-planned progression.
+Every checkpoint will be independently runnable. The permanent implementation
+begins with checkpoint 1 rather than importing the discarded feasibility spike.
+
+## Checkpoints
+
+- [01 — First frame](checkpoints/01-first-frame.md): Alice sends Bob one custom
+  Ethernet frame through a direct virtual cable without IP.
