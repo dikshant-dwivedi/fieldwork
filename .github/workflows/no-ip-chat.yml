@@ -1,0 +1,38 @@
+name: No-IP Chat
+
+on:
+  push:
+    branches: [main, "checkpoint/**"]
+    paths:
+      - ".github/workflows/no-ip-chat.yml"
+      - "experiments/no-ip-chat/**"
+  pull_request:
+    paths:
+      - ".github/workflows/no-ip-chat.yml"
+      - "experiments/no-ip-chat/**"
+
+jobs:
+  checkpoint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experiments/no-ip-chat
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check script syntax
+        run: bash -n scripts/guest/*.sh scripts/host/*.sh
+
+      - name: Test Ethernet frame encoding
+        run: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest discover -s tests -v
+
+      - name: Create the isolated cable
+        run: sudo ./scripts/guest/lab.sh create
+
+      - name: Send and verify a real frame
+        run: sudo ./scripts/guest/verify.sh
+
+      - name: Remove the isolated lab
+        if: always()
+        run: sudo ./scripts/guest/lab.sh destroy

@@ -1,0 +1,36 @@
+minimumLimaVersion: 2.2.0
+
+# This exact Ubuntu image and checksum make the guest reproducible. The URL is
+# intentionally repository-owned rather than inherited from Lima's changing
+# default template.
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-arm64.img"
+    arch: "aarch64"
+    digest: "sha256:7df0201546f75b8bcc1044594c806c35749421ad3c9bc1be2a3ab806cfae39cc"
+
+arch: "aarch64"
+vmType: "vz"
+mountType: "virtiofs"
+cpus: 2
+memory: "2GiB"
+disk: "10GiB"
+
+# The source stays on macOS and is mounted read-only into Linux. Generated lab
+# state lives inside the disposable VM or under the ignored .generated folder.
+mounts:
+  - location: "~"
+    writable: false
+
+containerd:
+  system: false
+  user: false
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/sh
+      set -eux
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install --yes --no-install-recommends iproute2 python3 tcpdump
+      rm -rf /var/lib/apt/lists/*
