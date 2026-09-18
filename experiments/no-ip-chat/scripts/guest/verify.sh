@@ -4,7 +4,8 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 ALICE_MAC="02:00:00:00:00:01"
 BOB_MAC="02:00:00:00:00:02"
-MESSAGE="checkpoint-one-real-frame"
+ALICE_MESSAGE="hello-from-alice"
+BOB_MESSAGE="hello-from-bob"
 
 fail() {
   echo "FAIL: $1" >&2
@@ -24,25 +25,40 @@ interface_has_no_ip noip-bob || fail "Bob's chat interface has an IP address"
 temporary_dir="$(mktemp -d)"
 trap 'rm -rf "$temporary_dir"' EXIT
 
+# Alice sends to Bob.
 ip netns exec noip-bob env PYTHONDONTWRITEBYTECODE=1 \
-  python3 "$PROJECT_DIR/src/receive_frame.py" --timeout 5 \
-  >"$temporary_dir/bob.txt" &
-receiver_pid=$!
+  python3 "$PROJECT_DIR/src/chat_probe.py" receive \
+  --name Bob --peer-mac "$ALICE_MAC" --timeout 5 \
+  >"$temporary_dir/bob-received.txt" &
+bob_pid=$!
 sleep 0.3
 
 ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
-  python3 "$PROJECT_DIR/src/send_frame.py" \
-  --destination "$BOB_MAC" --message "$MESSAGE" \
-  >"$temporary_dir/alice.txt"
-wait "$receiver_pid"
+  python3 "$PROJECT_DIR/src/chat_probe.py" send \
+  --name Alice --peer-mac "$BOB_MAC" --message "$ALICE_MESSAGE" \
+  >"$temporary_dir/alice-sent.txt"
+wait "$bob_pid"
 
-grep -q "source MAC:      $ALICE_MAC" "$temporary_dir/bob.txt" || fail "Bob saw the wrong source"
-grep -q "destination MAC: $BOB_MAC" "$temporary_dir/bob.txt" || fail "Bob saw the wrong destination"
-grep -q "EtherType:       0x88b5" "$temporary_dir/bob.txt" || fail "Bob saw the wrong EtherType"
-grep -q "payload:         $MESSAGE" "$temporary_dir/bob.txt" || fail "Bob saw the wrong payload"
+# Bob replies to Alice through the same direct cable.
+ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
+  python3 "$PROJECT_DIR/src/chat_probe.py" receive \
+  --name Alice --peer-mac "$BOB_MAC" --timeout 5 \
+  >"$temporary_dir/alice-received.txt" &
+alice_pid=$!
+sleep 0.3
 
-cat "$temporary_dir/alice.txt"
+ip netns exec noip-bob env PYTHONDONTWRITEBYTECODE=1 \
+  python3 "$PROJECT_DIR/src/chat_probe.py" send \
+  --name Bob --peer-mac "$ALICE_MAC" --message "$BOB_MESSAGE" \
+  >"$temporary_dir/bob-sent.txt"
+wait "$alice_pid"
+
+grep -q "received|Alice|$ALICE_MESSAGE" "$temporary_dir/bob-received.txt" || fail "Bob did not receive Alice's message"
+grep -q "received|Bob|$BOB_MESSAGE" "$temporary_dir/alice-received.txt" || fail "Alice did not receive Bob's reply"
+
+cat "$temporary_dir/alice-sent.txt"
+cat "$temporary_dir/bob-received.txt"
+cat "$temporary_dir/bob-sent.txt"
+cat "$temporary_dir/alice-received.txt"
 echo
-cat "$temporary_dir/bob.txt"
-echo
-echo "PASS: a real 0x88B5 Ethernet frame crossed the cable without IP."
+echo "PASS: Alice and Bob exchanged real Ethernet chat messages in both directions without IP."

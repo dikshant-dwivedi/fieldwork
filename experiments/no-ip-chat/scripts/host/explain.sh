@@ -22,4 +22,9 @@ The important Linux operations are:
 
 No 'ip address add' command exists. IPv6 is disabled on both chat interfaces.
 Read scripts/guest/lab.sh for the exact executable version.
+
+In checkpoint 2 both endpoints run the same DirectChat transport. Each knows
+the other endpoint's MAC address in advance, so discovery is not needed yet.
+The transport encodes a sender and text payload, wraps it in an Ethernet frame,
+and uses one AF_PACKET socket for both sending and receiving.
 EOF

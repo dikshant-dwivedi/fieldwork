@@ -27,6 +27,15 @@ class ReceivedFrame:
     message: str
 
 
+@dataclass(frozen=True)
+class EthernetFrame:
+    """An Ethernet header plus the uninterpreted bytes carried inside it."""
+
+    destination: bytes
+    source: bytes
+    payload: bytes
+
+
 def mac_to_bytes(text: str) -> bytes:
     """Turn the familiar 02:00:... notation into Ethernet's six bytes."""
     parts = text.split(":")
@@ -47,18 +56,16 @@ def format_mac(mac: bytes) -> str:
     return ":".join(f"{part:02x}" for part in mac)
 
 
-def build_frame(source: bytes, destination: bytes, message: str) -> bytes:
-    """Build one complete Ethernet frame, excluding the hardware-added FCS."""
+def build_ethernet_frame(
+    source: bytes,
+    destination: bytes,
+    payload: bytes,
+) -> bytes:
+    """Build an Ethernet frame without deciding what its payload means."""
     if len(source) != 6 or len(destination) != 6:
         raise ValueError("source and destination must be six-byte MAC addresses")
-
-    message_bytes = message.encode("utf-8")
-    if len(message_bytes) > 1400:
-        raise ValueError("checkpoint 1 messages are limited to 1400 bytes")
-
-    # Our tiny payload starts with a recognizable marker and an explicit length.
-    # The length matters because short Ethernet frames are padded with zero bytes.
-    payload = PROTOCOL_MAGIC + struct.pack("!H", len(message_bytes)) + message_bytes
+    if len(payload) > 1500:
+        raise ValueError("an Ethernet payload cannot exceed 1500 bytes in this lab")
 
     # A switch reads these fields from left to right: where the frame is going,
     # where it came from, and which higher-level protocol owns the payload.
@@ -69,9 +76,9 @@ def build_frame(source: bytes, destination: bytes, message: str) -> bytes:
     return frame.ljust(MINIMUM_FRAME_WITHOUT_FCS, b"\x00")
 
 
-def parse_frame(frame: bytes) -> ReceivedFrame:
-    """Validate and decode a frame belonging to checkpoint 1."""
-    if len(frame) < HEADER_LENGTH + len(PROTOCOL_MAGIC) + 2:
+def parse_ethernet_frame(frame: bytes) -> EthernetFrame:
+    """Separate an Ethernet header from its still-uninterpreted payload."""
+    if len(frame) < HEADER_LENGTH:
         raise ValueError("frame is too short")
 
     destination = frame[0:6]
@@ -80,7 +87,27 @@ def parse_frame(frame: bytes) -> ReceivedFrame:
     if ether_type != ETHERTYPE:
         raise ValueError(f"unexpected EtherType 0x{ether_type:04x}")
 
-    payload = frame[HEADER_LENGTH:]
+    return EthernetFrame(destination, source, frame[HEADER_LENGTH:])
+
+
+def build_frame(source: bytes, destination: bytes, message: str) -> bytes:
+    """Build the one-message payload retained from checkpoint 1."""
+    message_bytes = message.encode("utf-8")
+    if len(message_bytes) > 1400:
+        raise ValueError("checkpoint 1 messages are limited to 1400 bytes")
+
+    # The length matters because short Ethernet frames are padded with zero bytes.
+    payload = PROTOCOL_MAGIC + struct.pack("!H", len(message_bytes)) + message_bytes
+    return build_ethernet_frame(source, destination, payload)
+
+
+def parse_frame(frame: bytes) -> ReceivedFrame:
+    """Decode the one-message payload retained from checkpoint 1."""
+    ethernet_frame = parse_ethernet_frame(frame)
+    payload = ethernet_frame.payload
+    if len(payload) < len(PROTOCOL_MAGIC) + 2:
+        raise ValueError("frame is too short for a checkpoint 1 message")
+
     if payload[:4] != PROTOCOL_MAGIC:
         raise ValueError("payload is not a checkpoint 1 No-IP Chat message")
 
@@ -89,4 +116,8 @@ def parse_frame(frame: bytes) -> ReceivedFrame:
     if len(message_bytes) != message_length:
         raise ValueError("message was truncated")
 
-    return ReceivedFrame(destination, source, message_bytes.decode("utf-8"))
+    return ReceivedFrame(
+        ethernet_frame.destination,
+        ethernet_frame.source,
+        message_bytes.decode("utf-8"),
+    )
