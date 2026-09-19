@@ -8,6 +8,10 @@ Checkpoint 1 proved that one frame could travel from Alice to Bob. This stage
 gives both endpoints the same ability to send and receive repeated messages.
 The physical topology does not change.
 
+The veth pair is the virtual cable. `alice-nic` and `bob-nic` are temporary
+names for its two interface ends; after each end moves into its computer's
+network namespace, it is renamed to the conventional `eth0` NIC.
+
 ## Run it
 
 ```sh
