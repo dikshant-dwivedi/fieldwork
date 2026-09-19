@@ -16,6 +16,12 @@ no IPv4 or IPv6                         no IPv4 or IPv6
 There is no switch yet. The veth pair behaves like one Ethernet cable with an
 endpoint in each isolated Linux network stack.
 
+Linux names the two interfaces at the ends of a veth pair; it does not create a
+separate named cable object. The setup therefore creates temporary
+`alice-nic` and `bob-nic` ends, moves one into each computer, and renames each
+computer's NIC to the conventional `eth0`. The **veth pair itself is the
+cable**.
+
 ## Run it
 
 From the repository root, install the declared host dependency once:

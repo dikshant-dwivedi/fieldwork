@@ -22,16 +22,16 @@ create_lab() {
   require_root
   destroy_lab
 
-  # A veth pair behaves like a virtual Ethernet cable: anything entering one
-  # end exits the other. Checkpoint 1 intentionally has no switch yet.
+  # The veth pair is the virtual cable. alice-nic and bob-nic are the two
+  # interface ends of that cable, like NICs plugged into opposite ends.
   ip netns add "$ALICE_NAMESPACE"
   ip netns add "$BOB_NAMESPACE"
-  ip link add alice-cable type veth peer name bob-cable
-  ip link set alice-cable netns "$ALICE_NAMESPACE"
-  ip link set bob-cable netns "$BOB_NAMESPACE"
+  ip link add alice-nic type veth peer name bob-nic
+  ip link set alice-nic netns "$ALICE_NAMESPACE"
+  ip link set bob-nic netns "$BOB_NAMESPACE"
 
-  configure_endpoint "$ALICE_NAMESPACE" alice-cable "$ALICE_MAC"
-  configure_endpoint "$BOB_NAMESPACE" bob-cable "$BOB_MAC"
+  configure_endpoint "$ALICE_NAMESPACE" alice-nic "$ALICE_MAC"
+  configure_endpoint "$BOB_NAMESPACE" bob-nic "$BOB_MAC"
 
   echo "Created one virtual cable between Alice and Bob."
   show_topology
