@@ -41,7 +41,7 @@ case "${1:-}" in
   demo)
     ensure_vm
     cat <<EOF
-Open two terminal windows in:
+Open three terminal windows in:
   $PROJECT_DIR
 
 Run in terminal 1:
@@ -50,7 +50,11 @@ Run in terminal 1:
 Run in terminal 2:
   make chat-bob
 
-Messages travel through the direct virtual cable, not IP.
+Run in terminal 3:
+  make observe-switch
+
+Messages travel through br-noip, not IP. The observer shows which port the
+switch associates with each source MAC address.
 EOF
     ;;
   verify)
@@ -61,12 +65,20 @@ EOF
     ensure_vm
     guest sudo ./scripts/guest/lab.sh topology
     ;;
+  switch-table)
+    ensure_vm
+    guest sudo ./scripts/guest/lab.sh switch-table
+    ;;
+  observe-switch)
+    ensure_vm
+    guest_interactive sudo ./scripts/guest/observe_switch.sh
+    ;;
   clean)
     if instance_exists; then
       limactl start "$INSTANCE" >/dev/null
       guest sudo ./scripts/guest/lab.sh destroy
     fi
-    echo "Removed checkpoint 1 namespaces; the reusable VM was kept."
+    echo "Removed the No-IP Chat namespaces and switch; the reusable VM was kept."
     ;;
   listen)
     ensure_vm
@@ -91,7 +103,7 @@ EOF
       --peer-mac 02:00:00:00:00:01
     ;;
   *)
-    echo "Usage: $0 {setup|test|demo|verify|topology|clean|listen|send|chat-alice|chat-bob}" >&2
+    echo "Usage: $0 {setup|test|demo|verify|topology|switch-table|observe-switch|clean|listen|send|chat-alice|chat-bob}" >&2
     exit 2
     ;;
 esac

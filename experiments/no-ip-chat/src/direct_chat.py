@@ -1,4 +1,4 @@
-"""Bidirectional chat transport over one direct Ethernet cable."""
+"""Bidirectional chat transport over Ethernet, regardless of cable or switch."""
 
 import fcntl
 import socket
@@ -54,9 +54,15 @@ class DirectChat:
             ethernet_frame = parse_ethernet_frame(self.socket.recv(2048))
 
             # The peer MAC is fixed in this checkpoint. Automatic discovery is
-            # deliberately postponed until Carol creates that need.
+            # deliberately postponed until Carol creates that need. This is
+            # our application's temporary single-peer rule, not switch logic.
             if ethernet_frame.source != self.peer_mac:
                 continue
+
+            # An unknown-destination frame can be flooded to multiple switch
+            # ports. A physical NIC commonly filters a foreign unicast MAC;
+            # a raw socket in this virtual lab may still see the copied frame.
+            # Only accept frames addressed to this endpoint's own MAC.
             if ethernet_frame.destination != self.own_mac:
                 continue
             return decode_message(ethernet_frame.payload)

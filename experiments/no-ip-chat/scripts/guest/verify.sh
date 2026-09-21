@@ -17,6 +17,9 @@ interface_has_no_ip() {
   [[ -z "$(ip -n "$namespace" -o address show dev eth0)" ]]
 }
 
+[[ -d /sys/class/net/br-noip/bridge ]] || fail "br-noip is not a Linux bridge"
+[[ "$(readlink /sys/class/net/port1/master)" == *"/br-noip" ]] || fail "port1 is not attached to the switch"
+[[ "$(readlink /sys/class/net/port2/master)" == *"/br-noip" ]] || fail "port2 is not attached to the switch"
 [[ "$(ip -n noip-alice link show eth0)" == *"$ALICE_MAC"* ]] || fail "Alice's MAC is wrong"
 [[ "$(ip -n noip-bob link show eth0)" == *"$BOB_MAC"* ]] || fail "Bob's MAC is wrong"
 interface_has_no_ip noip-alice || fail "Alice's chat interface has an IP address"
@@ -39,7 +42,10 @@ ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
   >"$temporary_dir/alice-sent.txt"
 wait "$bob_pid"
 
-# Bob replies to Alice through the same direct cable.
+bridge fdb show br br-noip | grep -q "$ALICE_MAC dev port1" || fail "the switch did not learn Alice on port1"
+
+# Send a separate Bob-to-Alice test message through the switch. This is not an
+# automatic acknowledgement or handshake from the chat protocol.
 ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
   python3 "$PROJECT_DIR/src/chat_probe.py" receive \
   --name Alice --peer-mac "$BOB_MAC" --timeout 5 \
@@ -53,6 +59,8 @@ ip netns exec noip-bob env PYTHONDONTWRITEBYTECODE=1 \
   >"$temporary_dir/bob-sent.txt"
 wait "$alice_pid"
 
+bridge fdb show br br-noip | grep -q "$BOB_MAC dev port2" || fail "the switch did not learn Bob on port2"
+
 grep -q "received|Alice|$ALICE_MESSAGE" "$temporary_dir/bob-received.txt" || fail "Bob did not receive Alice's message"
 grep -q "received|Bob|$BOB_MESSAGE" "$temporary_dir/alice-received.txt" || fail "Alice did not receive Bob's reply"
 
@@ -61,4 +69,8 @@ cat "$temporary_dir/bob-received.txt"
 cat "$temporary_dir/bob-sent.txt"
 cat "$temporary_dir/alice-received.txt"
 echo
-echo "PASS: Alice and Bob exchanged real Ethernet chat messages in both directions without IP."
+echo "Switch forwarding table:"
+bridge fdb show br br-noip | grep -E "$ALICE_MAC|$BOB_MAC"
+echo
+echo "PASS: chat crossed br-noip and the switch learned both MAC-to-port mappings."
+echo "NOTE: two ports do not prove selective forwarding; checkpoint 5 will inspect Carol's port."
