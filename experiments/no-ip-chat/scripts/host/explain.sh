@@ -2,29 +2,30 @@
 set -euo pipefail
 
 cat <<'EOF'
-Checkpoint 1 builds this topology:
+Checkpoint 3 builds this topology:
 
-  Alice namespace [eth0 02:00:00:00:00:01]
-                         |
-                  one veth cable
-                         |
-  Bob namespace   [eth0 02:00:00:00:00:02]
+  Alice [eth0 02:00:00:00:00:01] ── cable ── [port1]
+                                                     \
+                                                      br-noip switch
+                                                     /
+  Bob   [eth0 02:00:00:00:00:02] ── cable ── [port2]
 
 The important Linux operations are:
 
   ip netns add noip-alice              # create Alice's network stack
   ip netns add noip-bob                # create Bob's network stack
-  ip link add alice-cable type veth peer name bob-cable
-                                        # create both ends of one virtual cable
-  ip link set ... netns ...             # move one end into each computer
+  ip link add br-noip type bridge        # create the software switch
+  ip link add ... type veth peer name ...# create each virtual cable
+  ip link set ... master br-noip         # plug its switch end into a port
+  ip link set ... netns ...              # move its computer end into a namespace
   ip -n ... link set eth0 address ...   # assign fixed demonstration MACs
   ip -n ... link set eth0 up            # plug in and raise each interface
 
 No 'ip address add' command exists. IPv6 is disabled on both chat interfaces.
 Read scripts/guest/lab.sh for the exact executable version.
 
-In checkpoint 2 both endpoints run the same DirectChat transport. Each knows
-the other endpoint's MAC address in advance, so discovery is not needed yet.
-The transport encodes a sender and text payload, wraps it in an Ethernet frame,
-and uses one AF_PACKET socket for both sending and receiving.
+The veth pair is the cable; each named veth interface is one end of that cable.
+The chat code is unchanged from checkpoint 2. The bridge learns the source MAC
+of each arriving frame and records the port it came through. Once both entries
+exist, it associates Alice with port1 and Bob with port2.
 EOF

@@ -25,3 +25,6 @@ begins with checkpoint 1 rather than importing the discarded feasibility spike.
   Ethernet frame through a direct virtual cable without IP.
 - [02 — Two computers chat](checkpoints/02-two-computers-chat.md): Alice and Bob
   exchange repeated messages in both directions over that same cable.
+- [03 — Introduce a switch](checkpoints/03-introduce-switch.md): their chat code
+  stays unchanged while two cables and an observable bridge replace the direct
+  connection.
