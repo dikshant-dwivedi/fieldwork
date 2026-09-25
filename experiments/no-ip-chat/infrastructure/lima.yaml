@@ -12,8 +12,13 @@ arch: "aarch64"
 vmType: "vz"
 mountType: "virtiofs"
 cpus: 2
-memory: "2GiB"
+memory: "3GiB"
 disk: "10GiB"
+
+# VZ presents the Linux framebuffer in a native macOS window. The chat UI is
+# rendered by Linux inside the VM; it is not a macOS, browser, HTTP, or VNC app.
+video:
+  display: "vz"
 
 # The source stays on macOS and is mounted read-only into Linux. Generated lab
 # state lives inside the disposable VM or under the ignored .generated folder.
@@ -32,5 +37,8 @@ provision:
       set -eux
       export DEBIAN_FRONTEND=noninteractive
       apt-get update
-      apt-get install --yes --no-install-recommends iproute2 python3 tcpdump
+      apt-get install --yes --no-install-recommends \
+        dbus-x11 fonts-dejavu-core iproute2 openbox python3 python3-tk tcpdump \
+        x11-xserver-utils xinit xserver-xorg-core xserver-xorg-input-libinput \
+        xserver-xorg-video-all
       rm -rf /var/lib/apt/lists/*

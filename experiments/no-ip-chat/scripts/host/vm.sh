@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-INSTANCE="noip-chat"
+# The final exhibit uses a separate instance so Lima applies the native-display
+# configuration even when an earlier checkpoint's headless VM already exists.
+INSTANCE="noip-chat-ui"
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CONFIG="$PROJECT_DIR/infrastructure/lima.yaml"
 
@@ -63,6 +65,18 @@ Run `make verify` for the scripted proof that Bob discovers Alice by name and
 his direct message does not cross Carol's switch port.
 EOF
     ;;
+  gui)
+    ensure_vm
+    guest sudo ./scripts/guest/gui.sh start
+    ;;
+  gui-stop)
+    ensure_vm
+    guest sudo ./scripts/guest/gui.sh stop
+    ;;
+  gui-smoke)
+    ensure_vm
+    guest sudo ./scripts/guest/gui.sh smoke
+    ;;
   verify)
     ensure_vm
     guest sudo ./scripts/guest/verify.sh
@@ -112,7 +126,7 @@ EOF
       python3 ./src/chat.py --name Carol
     ;;
   *)
-    echo "Usage: $0 {setup|test|demo|verify|topology|switch-table|observe-switch|clean|listen|send|chat-alice|chat-bob|chat-carol}" >&2
+    echo "Usage: $0 {setup|test|demo|verify|gui|gui-stop|gui-smoke|topology|switch-table|observe-switch|clean|listen|send|chat-alice|chat-bob|chat-carol}" >&2
     exit 2
     ;;
 esac

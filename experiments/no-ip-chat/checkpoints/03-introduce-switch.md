@@ -88,6 +88,24 @@ The Python chat **behavior** is unchanged; only explanatory comments were
 added. That is evidence that Ethernet applications do not need to know whether
 a direct cable or switch lies between them.
 
+## Execution map
+
+```text
+make setup → Makefile → vm.sh → Lima VM → lab.sh create_lab()
+→ create br-noip switch
+→ create Alice eth0 ↔ port1 cable and Bob eth0 ↔ port2 cable
+→ attach switch ends, assign MACs, assign no IPs, raise links
+
+chat.py → DirectChat.send(...) → payload → Ethernet frame → raw socket
+→ eth0 → cable → switch port → br-noip → other port/cable/NIC
+
+make observe-switch → vm.sh → observe_switch.sh
+→ read bridge FDB → print only when MAC-to-port entries change
+```
+
+The applications choose destination MACs, the switch learns and forwards, and
+the observer only reads the table. These are three separate responsibilities.
+
 The switch flooding a frame toward a port is not the same as that computer
 accepting it. A physical NIC commonly drops frames addressed to someone else's
 unicast MAC. Our raw socket on a virtual interface may expose the copied frame,
