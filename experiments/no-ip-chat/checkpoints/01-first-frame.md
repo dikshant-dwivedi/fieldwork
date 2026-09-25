@@ -16,6 +16,17 @@ no IPv4 or IPv6                         no IPv4 or IPv6
 There is no switch yet. The veth pair behaves like one Ethernet cable with an
 endpoint in each isolated Linux network stack.
 
+The frame still contains real source and destination MAC fields. Alice's source
+MAC says which NIC created it, while Bob's destination MAC says which NIC it is
+meant for. They do not have to choose between several physical paths yet: this
+cable has only Alice at one end and Bob at the other.
+
+Linux names the two interfaces at the ends of a veth pair; it does not create a
+separate named cable object. The setup therefore creates temporary
+`alice-nic` and `bob-nic` ends, moves one into each computer, and renames each
+computer's NIC to the conventional `eth0`. The **veth pair itself is the
+cable**.
+
 ## Run it
 
 From the repository root, install the declared host dependency once:
@@ -51,6 +62,11 @@ Bob prints:
 - experimental EtherType `0x88B5`; and
 - Alice's text payload.
 
+This first receiver deliberately stops at **observing** one valid No-IP Chat
+frame. It prints the source and destination but does not yet reject an
+unexpected address. Checkpoint 2 adds that application-level filtering when a
+one-shot proof becomes a continuing conversation.
+
 `make topology` prints both interfaces with empty address columns. `make verify`
 checks those empty IP assignments and performs another real frame exchange.
 
@@ -73,6 +89,7 @@ skim them, but they are not the networking lesson.
 ## Limitation that motivates checkpoint 2
 
 Alice can send one fixed message and Bob can receive it. There is no interactive
-conversation, reply path or reusable message protocol yet. Checkpoint 2 turns
-this one-way proof into a two-person chat while preserving the same direct
-cable and no-IP constraint.
+conversation, reply path, sender name in the payload, address filtering or
+reusable message protocol yet. Checkpoint 2 adds those application behaviours
+while preserving the same Ethernet mechanism, direct cable and no-IP
+constraint.

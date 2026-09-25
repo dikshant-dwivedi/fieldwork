@@ -2,25 +2,21 @@
 """Send one No-IP Chat Ethernet frame from Alice to Bob."""
 
 import argparse
-import fcntl
+from pathlib import Path
 import socket
-import struct
 
 from ethernet import ETHERTYPE, build_frame, format_mac, mac_to_bytes
 
 
-SIOCGIFHWADDR = 0x8927
-
-
 def interface_mac(interface: str) -> bytes:
-    """Ask Linux for the real MAC assigned to this virtual interface."""
-    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        request = struct.pack("256s", interface[:15].encode("ascii"))
-        response = fcntl.ioctl(probe.fileno(), SIOCGIFHWADDR, request)
-        return response[18:24]
-    finally:
-        probe.close()
+    """Read this computer's MAC without opening an IP-family socket.
+
+    Linux exposes every network interface in /sys/class/net. Inside Alice's
+    namespace, this path describes Alice's eth0 NIC; inside Bob's, it describes
+    Bob's. Reading the address file does not send anything onto the network.
+    """
+    address = Path(f"/sys/class/net/{interface}/address").read_text().strip()
+    return mac_to_bytes(address)
 
 
 def main() -> None:

@@ -15,6 +15,8 @@ _HEADER = struct.Struct("!4sBH")
 
 @dataclass(frozen=True)
 class ChatMessage:
+    # ``sender`` is a display name chosen by our application. It lives in the
+    # payload; it is not part of the Ethernet header and is not authenticated.
     sender: str
     text: str
 

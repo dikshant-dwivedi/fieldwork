@@ -42,7 +42,8 @@ ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
   >"$temporary_dir/alice-sent.txt"
 wait "$bob_pid"
 
-bridge fdb show br br-noip | grep -q "$ALICE_MAC dev port1" || fail "the switch did not learn Alice on port1"
+forwarding_table="$(bridge fdb show br br-noip)"
+[[ "$forwarding_table" == *"$ALICE_MAC dev port1"* ]] || fail "the switch did not learn Alice on port1"
 
 # Send a separate Bob-to-Alice test message through the switch. This is not an
 # automatic acknowledgement or handshake from the chat protocol.
@@ -59,7 +60,8 @@ ip netns exec noip-bob env PYTHONDONTWRITEBYTECODE=1 \
   >"$temporary_dir/bob-sent.txt"
 wait "$alice_pid"
 
-bridge fdb show br br-noip | grep -q "$BOB_MAC dev port2" || fail "the switch did not learn Bob on port2"
+forwarding_table="$(bridge fdb show br br-noip)"
+[[ "$forwarding_table" == *"$BOB_MAC dev port2"* ]] || fail "the switch did not learn Bob on port2"
 
 grep -q "received|Alice|$ALICE_MESSAGE" "$temporary_dir/bob-received.txt" || fail "Bob did not receive Alice's message"
 grep -q "received|Bob|$BOB_MESSAGE" "$temporary_dir/alice-received.txt" || fail "Alice did not receive Bob's reply"
@@ -70,7 +72,7 @@ cat "$temporary_dir/bob-sent.txt"
 cat "$temporary_dir/alice-received.txt"
 echo
 echo "Switch forwarding table:"
-bridge fdb show br br-noip | grep -E "$ALICE_MAC|$BOB_MAC"
+grep -E "$ALICE_MAC|$BOB_MAC" <<<"$forwarding_table"
 echo
 echo "PASS: chat crossed br-noip and the switch learned both MAC-to-port mappings."
-echo "NOTE: two ports do not prove selective forwarding; checkpoint 5 will inspect Carol's port."
+echo "NOTE: two ports do not prove selective forwarding; checkpoint 4 will inspect Carol's port."

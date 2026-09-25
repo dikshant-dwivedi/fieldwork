@@ -15,6 +15,24 @@ require_root() {
 }
 
 destroy_lab() {
+  # A running chat process can keep an old namespace and cable alive after its
+  # public namespace name is removed. Stop the demonstration before rebuilding
+  # rather than leaving a hidden old topology behind.
+  for namespace in "$ALICE_NAMESPACE" "$BOB_NAMESPACE"; do
+    if ip netns list | grep -q "^${namespace}\([[:space:]]\|$\)" &&
+      [[ -n "$(ip netns pids "$namespace")" ]]; then
+      echo "Stop the chat running in $namespace before rebuilding the lab." >&2
+      return 1
+    fi
+  done
+
+  # Remove only our named veth switch ports if an interrupted older reset left
+  # them behind. Deleting one veth end also deletes its paired cable end.
+  for port in port1 port2; do
+    if ip -d link show dev "$port" 2>/dev/null | grep -q ' veth '; then
+      ip link delete "$port"
+    fi
+  done
   ip netns delete "$ALICE_NAMESPACE" 2>/dev/null || true
   ip netns delete "$BOB_NAMESPACE" 2>/dev/null || true
   ip link delete "$BRIDGE" 2>/dev/null || true

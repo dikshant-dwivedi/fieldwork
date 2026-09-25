@@ -1,8 +1,7 @@
 """Bidirectional chat transport over Ethernet, regardless of cable or switch."""
 
-import fcntl
+from pathlib import Path
 import socket
-import struct
 
 from chat_protocol import ChatMessage, decode_message, encode_message
 from ethernet import (
@@ -13,17 +12,10 @@ from ethernet import (
 )
 
 
-SIOCGIFHWADDR = 0x8927
-
-
 def interface_mac(interface: str) -> bytes:
-    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        request = struct.pack("256s", interface[:15].encode("ascii"))
-        response = fcntl.ioctl(probe.fileno(), SIOCGIFHWADDR, request)
-        return response[18:24]
-    finally:
-        probe.close()
+    """Read this namespace's NIC address without using an IP-family socket."""
+    address = Path(f"/sys/class/net/{interface}/address").read_text().strip()
+    return mac_to_bytes(address)
 
 
 class DirectChat:
@@ -44,6 +36,8 @@ class DirectChat:
         self.socket.bind((interface, 0))
 
     def send(self, sender: str, text: str) -> None:
+        # The sender's display name and text belong to our application payload.
+        # Ethernet itself sees only bytes and the source/destination MACs.
         payload = encode_message(ChatMessage(sender, text))
         frame = build_ethernet_frame(self.own_mac, self.peer_mac, payload)
         self.socket.send(frame)
@@ -53,16 +47,16 @@ class DirectChat:
         while True:
             ethernet_frame = parse_ethernet_frame(self.socket.recv(2048))
 
-            # The peer MAC is fixed in this checkpoint. Automatic discovery is
-            # deliberately postponed until Carol creates that need. This is
-            # our application's temporary single-peer rule, not switch logic.
+            # The peer MAC is supplied before startup. This temporary rule is
+            # part of our application, not the switch. First ask, "did the
+            # configured peer send this frame?"
             if ethernet_frame.source != self.peer_mac:
                 continue
 
             # An unknown-destination frame can be flooded to multiple switch
             # ports. A physical NIC commonly filters a foreign unicast MAC;
             # a raw socket in this virtual lab may still see the copied frame.
-            # Only accept frames addressed to this endpoint's own MAC.
+            # Therefore also ask, "was this frame addressed to my own NIC?"
             if ethernet_frame.destination != self.own_mac:
                 continue
             return decode_message(ethernet_frame.payload)
