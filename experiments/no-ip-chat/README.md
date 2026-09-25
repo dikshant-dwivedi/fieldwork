@@ -31,3 +31,6 @@ begins with checkpoint 1 rather than importing the discarded feasibility spike.
 - [04 — Add Carol](checkpoints/04-add-carol.md): a manually configured
   three-person address book makes unknown flooding and learned unicast visibly
   different while every conversation remains one-to-one.
+- [05 — Discover peers](checkpoints/05-discover-peers.md): periodic broadcast
+  HELLO announcements replace the manual address books; direct CHAT frames
+  remain unicast to one discovered recipient.
