@@ -26,10 +26,15 @@ def main() -> None:
     parser.add_argument("--message", default="hello from Alice")
     args = parser.parse_args()
 
+    # Read this top-to-bottom before opening the helper definitions:
+    # 1. Identify the two NICs.
     source = interface_mac(args.interface)
     destination = mac_to_bytes(args.destination)
+
+    # 2. Put the message in a payload and add the Ethernet header.
     frame = build_frame(source, destination, args.message)
 
+    # 3. Hand those complete frame bytes directly to Ethernet.
     # AF_PACKET is Linux's direct doorway to the link layer. There is no IP
     # address, TCP connection, UDP port, or localhost service in this send path.
     raw_socket = socket.socket(

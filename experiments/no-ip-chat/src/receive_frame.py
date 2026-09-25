@@ -13,6 +13,8 @@ def main() -> None:
     parser.add_argument("--timeout", type=float, default=10.0)
     args = parser.parse_args()
 
+    # Read this top-to-bottom: open Ethernet, wait for bytes, parse the frame,
+    # then display it. Follow parse_frame's definition only after this overview.
     # Asking AF_PACKET for only our EtherType filters unrelated Ethernet traffic
     # before it reaches the rest of this small program.
     raw_socket = socket.socket(
