@@ -3,9 +3,11 @@ set -euo pipefail
 
 ALICE_NAMESPACE="noip-alice"
 BOB_NAMESPACE="noip-bob"
+CAROL_NAMESPACE="noip-carol"
 BRIDGE="br-noip"
 ALICE_MAC="02:00:00:00:00:01"
 BOB_MAC="02:00:00:00:00:02"
+CAROL_MAC="02:00:00:00:00:03"
 
 require_root() {
   if [[ "$(id -u)" -ne 0 ]]; then
@@ -18,7 +20,7 @@ destroy_lab() {
   # A running chat process can keep an old namespace and cable alive after its
   # public namespace name is removed. Stop the demonstration before rebuilding
   # rather than leaving a hidden old topology behind.
-  for namespace in "$ALICE_NAMESPACE" "$BOB_NAMESPACE"; do
+  for namespace in "$ALICE_NAMESPACE" "$BOB_NAMESPACE" "$CAROL_NAMESPACE"; do
     if ip netns list | grep -q "^${namespace}\([[:space:]]\|$\)" &&
       [[ -n "$(ip netns pids "$namespace")" ]]; then
       echo "Stop the chat running in $namespace before rebuilding the lab." >&2
@@ -28,13 +30,14 @@ destroy_lab() {
 
   # Remove only our named veth switch ports if an interrupted older reset left
   # them behind. Deleting one veth end also deletes its paired cable end.
-  for port in port1 port2; do
+  for port in port1 port2 port3; do
     if ip -d link show dev "$port" 2>/dev/null | grep -q ' veth '; then
       ip link delete "$port"
     fi
   done
   ip netns delete "$ALICE_NAMESPACE" 2>/dev/null || true
   ip netns delete "$BOB_NAMESPACE" 2>/dev/null || true
+  ip netns delete "$CAROL_NAMESPACE" 2>/dev/null || true
   ip link delete "$BRIDGE" 2>/dev/null || true
 }
 
@@ -56,20 +59,25 @@ create_lab() {
 
   ip netns add "$ALICE_NAMESPACE"
   ip netns add "$BOB_NAMESPACE"
+  ip netns add "$CAROL_NAMESPACE"
 
   # Each veth pair is one cable. Its two named interfaces are the cable ends:
   # a computer's NIC at one end and a numbered switch port at the other.
   ip link add alice-nic type veth peer name port1
   ip link add bob-nic type veth peer name port2
+  ip link add carol-nic type veth peer name port3
   ip link set alice-nic netns "$ALICE_NAMESPACE"
   ip link set bob-nic netns "$BOB_NAMESPACE"
+  ip link set carol-nic netns "$CAROL_NAMESPACE"
   configure_switch_port port1
   configure_switch_port port2
+  configure_switch_port port3
 
   configure_endpoint "$ALICE_NAMESPACE" alice-nic "$ALICE_MAC"
   configure_endpoint "$BOB_NAMESPACE" bob-nic "$BOB_MAC"
+  configure_endpoint "$CAROL_NAMESPACE" carol-nic "$CAROL_MAC"
 
-  echo "Connected Alice and Bob to the br-noip software switch."
+  echo "Connected Alice, Bob, and Carol to the br-noip software switch."
   show_topology
 }
 
@@ -106,6 +114,8 @@ show_topology() {
   ip -n "$ALICE_NAMESPACE" -brief address show dev eth0
   echo "Bob namespace:"
   ip -n "$BOB_NAMESPACE" -brief address show dev eth0
+  echo "Carol namespace:"
+  ip -n "$CAROL_NAMESPACE" -brief address show dev eth0
   echo
   echo "Empty address columns show that the switch and chat interfaces have no IP."
   show_switch_table

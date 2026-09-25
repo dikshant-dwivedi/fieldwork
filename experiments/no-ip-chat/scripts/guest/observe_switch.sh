@@ -5,6 +5,7 @@ echo "NO-IP CHAT · br-noip switch observer"
 echo "────────────────────────────────────"
 echo "port1 ← cable to Alice's eth0 NIC"
 echo "port2 ← cable to Bob's eth0 NIC"
+echo "port3 ← cable to Carol's eth0 NIC"
 echo
 echo "Watching for changes in the switch's learned MAC-to-port table."
 echo "The bridge learns from source addresses; it does not read chat text."

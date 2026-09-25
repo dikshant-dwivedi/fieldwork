@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
-"""Non-interactive use of DirectChat for repeatable verification."""
+"""Non-interactive caller of EthernetChat for repeatable verification."""
 
 import argparse
 
-from direct_chat import DirectChat
+from ethernet_chat import EthernetChat
+from manual_config import load_config
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", choices=("send", "receive"))
-    parser.add_argument("--name", required=True)
-    parser.add_argument("--peer-mac", required=True)
+    parser.add_argument("--config", required=True)
+    parser.add_argument("--to")
     parser.add_argument("--message")
     parser.add_argument("--timeout", type=float, default=5.0)
     args = parser.parse_args()
 
-    with DirectChat("eth0", args.peer_mac) as chat:
+    config = load_config(args.config)
+    with EthernetChat(config.name, config.peers) as chat:
         if args.mode == "send":
-            if args.message is None:
-                parser.error("send requires --message")
-            chat.send(args.name, args.message)
-            print(f"sent|{args.name}|{args.message}")
+            if not args.to or args.message is None:
+                parser.error("send requires --to and --message")
+            chat.send_to(args.to, args.message)
+            print(f"sent|{config.name}|{args.to}|{args.message}")
         else:
             message = chat.receive(timeout=args.timeout)
-            print(f"received|{message.sender}|{message.text}")
+            print(f"received|{message.sender}|{config.name}|{message.text}")
 
 
 if __name__ == "__main__":
