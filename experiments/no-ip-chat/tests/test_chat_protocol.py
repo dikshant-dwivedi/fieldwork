@@ -1,21 +1,23 @@
 import unittest
 
-from chat_protocol import ChatMessage, decode_message, encode_message
+from chat_protocol import ChatMessage, Hello, decode_packet, encode_packet
 
 
 class ChatProtocolTests(unittest.TestCase):
-    def test_round_trip_ignores_ethernet_padding(self):
-        original = ChatMessage("Alice", "Hello Bob")
-        padded_payload = encode_message(original).ljust(46, b"\x00")
+    def test_hello_round_trip_ignores_ethernet_padding(self):
+        payload = encode_packet(Hello("Alice")).ljust(46, b"\x00")
+        self.assertEqual(decode_packet(payload), Hello("Alice"))
 
-        self.assertEqual(decode_message(padded_payload), original)
+    def test_chat_round_trip_ignores_ethernet_padding(self):
+        original = ChatMessage("Bob", "Hello Alice")
+        payload = encode_packet(original).ljust(46, b"\x00")
+        self.assertEqual(decode_packet(payload), original)
 
     def test_rejects_another_protocol_version(self):
-        payload = bytearray(encode_message(ChatMessage("Alice", "Hello")))
+        payload = bytearray(encode_packet(Hello("Alice")))
         payload[0:4] = b"NIP9"
-
-        with self.assertRaisesRegex(ValueError, "checkpoint 2"):
-            decode_message(bytes(payload))
+        with self.assertRaisesRegex(ValueError, "checkpoint 5"):
+            decode_packet(bytes(payload))
 
 
 if __name__ == "__main__":

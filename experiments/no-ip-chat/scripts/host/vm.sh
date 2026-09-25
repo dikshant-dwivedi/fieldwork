@@ -56,11 +56,11 @@ Run in terminal 3:
 Run in terminal 4:
   make observe-switch
 
-Inside each chat, run /peers and /to NAME. Names and MACs come from the visible
-config/*.json files in this checkpoint. Messages remain one-to-one unicast.
+Each app periodically broadcasts only a small HELLO announcement. Run /peers
+and /to NAME after discovery. CHAT frames remain one-to-one unicast.
 
-Run `make observe-forwarding` separately for the scripted proof that the first
-unknown Alice-to-Bob frame crosses Carol's port but a learned one does not.
+Run `make verify` for the scripted proof that Bob discovers Alice by name and
+his direct message does not cross Carol's switch port.
 EOF
     ;;
   verify)
@@ -99,17 +99,17 @@ EOF
   chat-alice)
     ensure_vm
     guest_interactive sudo ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
-      python3 ./src/chat.py --config ./config/alice.json
+      python3 ./src/chat.py --name Alice
     ;;
   chat-bob)
     ensure_vm
     guest_interactive sudo ip netns exec noip-bob env PYTHONDONTWRITEBYTECODE=1 \
-      python3 ./src/chat.py --config ./config/bob.json
+      python3 ./src/chat.py --name Bob
     ;;
   chat-carol)
     ensure_vm
     guest_interactive sudo ip netns exec noip-carol env PYTHONDONTWRITEBYTECODE=1 \
-      python3 ./src/chat.py --config ./config/carol.json
+      python3 ./src/chat.py --name Carol
     ;;
   *)
     echo "Usage: $0 {setup|test|demo|verify|topology|switch-table|observe-switch|clean|listen|send|chat-alice|chat-bob|chat-carol}" >&2
