@@ -13,8 +13,8 @@ IPv6 addresses.
 1. Send one custom Ethernet frame from Alice to Bob.
 2. Let two directly connected computers chat.
 3. Replace their direct cable with a switch.
-4. Add Carol and discover peers through broadcast frames.
-5. Use broadcast for discovery and learned unicast for conversation.
+4. Add Carol and reveal unknown-unicast flooding versus learned forwarding.
+5. Replace manual peer addresses with discovery while keeping chat unicast.
 
 Every checkpoint will be independently runnable. The permanent implementation
 begins with checkpoint 1 rather than importing the discarded feasibility spike.
