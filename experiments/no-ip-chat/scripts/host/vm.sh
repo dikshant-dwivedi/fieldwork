@@ -41,7 +41,7 @@ case "${1:-}" in
   demo)
     ensure_vm
     cat <<EOF
-Open three terminal windows in:
+Open four terminal windows in:
   $PROJECT_DIR
 
 Run in terminal 1:
@@ -51,10 +51,16 @@ Run in terminal 2:
   make chat-bob
 
 Run in terminal 3:
+  make chat-carol
+
+Run in terminal 4:
   make observe-switch
 
-Messages travel through br-noip, not IP. The observer shows which port the
-switch associates with each source MAC address.
+Inside each chat, run /peers and /to NAME. Names and MACs come from the visible
+config/*.json files in this checkpoint. Messages remain one-to-one unicast.
+
+Run `make observe-forwarding` separately for the scripted proof that the first
+unknown Alice-to-Bob frame crosses Carol's port but a learned one does not.
 EOF
     ;;
   verify)
@@ -93,17 +99,20 @@ EOF
   chat-alice)
     ensure_vm
     guest_interactive sudo ip netns exec noip-alice env PYTHONDONTWRITEBYTECODE=1 \
-      python3 ./src/chat.py --name Alice --peer-name Bob \
-      --peer-mac 02:00:00:00:00:02
+      python3 ./src/chat.py --config ./config/alice.json
     ;;
   chat-bob)
     ensure_vm
     guest_interactive sudo ip netns exec noip-bob env PYTHONDONTWRITEBYTECODE=1 \
-      python3 ./src/chat.py --name Bob --peer-name Alice \
-      --peer-mac 02:00:00:00:00:01
+      python3 ./src/chat.py --config ./config/bob.json
+    ;;
+  chat-carol)
+    ensure_vm
+    guest_interactive sudo ip netns exec noip-carol env PYTHONDONTWRITEBYTECODE=1 \
+      python3 ./src/chat.py --config ./config/carol.json
     ;;
   *)
-    echo "Usage: $0 {setup|test|demo|verify|topology|switch-table|observe-switch|clean|listen|send|chat-alice|chat-bob}" >&2
+    echo "Usage: $0 {setup|test|demo|verify|topology|switch-table|observe-switch|clean|listen|send|chat-alice|chat-bob|chat-carol}" >&2
     exit 2
     ;;
 esac

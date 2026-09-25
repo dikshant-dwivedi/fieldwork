@@ -28,3 +28,6 @@ begins with checkpoint 1 rather than importing the discarded feasibility spike.
 - [03 — Introduce a switch](checkpoints/03-introduce-switch.md): their chat code
   stays unchanged while two cables and an observable bridge replace the direct
   connection.
+- [04 — Add Carol](checkpoints/04-add-carol.md): a manually configured
+  three-person address book makes unknown flooding and learned unicast visibly
+  different while every conversation remains one-to-one.
