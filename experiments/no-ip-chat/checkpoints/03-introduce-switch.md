@@ -4,8 +4,14 @@
 
 What changes when a switch replaces Alice and Bob's direct cable?
 
-The chat protocol and clients do not change. Only the path changes: Alice and
-Bob now have separate virtual cables whose other ends meet at a Linux bridge.
+The chat protocol and clients do not change. Alice is still configured to talk
+only to Bob's MAC, and Bob only to Alice's. Only the path changes: they now have
+separate virtual cables whose other ends meet at a Linux bridge.
+
+The switch does **not** turn this into a direct chat or decide who is talking to
+whom. Our application already made that decision by putting the configured
+peer's MAC in each frame's destination field. The switch only decides which
+port should carry that addressed frame.
 
 ## Topology
 
@@ -60,6 +66,8 @@ For the human demonstration, use the three commands printed by `make demo`:
 
 Start the switch observer before sending messages. Its forwarding table begins
 empty, then learns Alice on `port1` and Bob on `port2` from frames they send.
+The observer intentionally keeps running until `Ctrl-C`. Later `stale` and
+empty states show dynamic entries ageing; they are not repeated chat messages.
 
 Linux names the two interfaces at the ends of a veth pair; it does not assign a
 third name to the pair itself. Throughout this experiment, the **veth pair is
@@ -93,6 +101,8 @@ selective delivery to Bob; those need a third port and a capture on that port.
 
 ## Limitation that motivates checkpoint 4
 
-The switch has two ports and both clients still have one hardcoded peer. Carol
-cannot join until the topology gains a third port and participants acquire a
-way to announce and discover one another.
+The switch has only two ports, so we cannot yet observe the difference between
+flooding every other port and selecting Bob's one known port. Checkpoint 4 adds
+Carol's third port and a manually configured three-person address book. That
+makes both forwarding behaviours visible before checkpoint 5 replaces the
+manual address book with discovery.
