@@ -34,3 +34,10 @@ begins with checkpoint 1 rather than importing the discarded feasibility spike.
 - [05 — Discover peers](checkpoints/05-discover-peers.md): periodic broadcast
   HELLO announcements replace the manual address books; direct CHAT frames
   remain unicast to one discovered recipient.
+
+After checkpoint 5, the [polished interface](POLISHED-INTERFACE.md) places a
+Tkinter presentation layer over the same `DiscoveryChat` module. It is an
+exhibit, not a sixth networking checkpoint: the protocol does not change.
+
+For the exact tag, command, and reading order at every stage, follow the
+[learning path](LEARNING-PATH.md).

@@ -53,6 +53,20 @@ To experience the send and receive as two computers, open two terminals after
 `make setup`. Start `make listen` in the first, then run `make send` in the
 second.
 
+## Execution map
+
+```text
+make listen → Makefile → vm.sh → Bob namespace → receive_frame.py main()
+→ raw Ethernet receive → ethernet.parse_frame(...) → print frame
+
+make send → Makefile → vm.sh → Alice namespace → send_frame.py main()
+→ read Alice's eth0 MAC → ethernet.build_frame(payload + header)
+→ raw Ethernet send → direct virtual cable → Bob eth0
+```
+
+Read each `main()` first. Use “go to definition” when it reaches an Ethernet
+helper, then return to the caller so the story remains top-down.
+
 ## What to observe
 
 Bob prints:

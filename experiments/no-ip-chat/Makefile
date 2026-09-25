@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: doctor setup test demo verify clean topology explain listen send chat-alice chat-bob chat-carol switch-table observe-switch observe-forwarding
+.PHONY: doctor setup test demo verify gui gui-stop gui-smoke clean topology explain listen send chat-alice chat-bob chat-carol switch-table observe-switch observe-forwarding
 
 doctor:
 	@./scripts/host/doctor.sh
@@ -16,6 +16,15 @@ demo:
 
 verify:
 	@./scripts/host/vm.sh verify
+
+gui:
+	@./scripts/host/vm.sh gui
+
+gui-stop:
+	@./scripts/host/vm.sh gui-stop
+
+gui-smoke:
+	@./scripts/host/vm.sh gui-smoke
 
 clean:
 	@./scripts/host/vm.sh clean
