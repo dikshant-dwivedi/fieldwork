@@ -8,6 +8,11 @@ Checkpoint 1 proved that one frame could travel from Alice to Bob. This stage
 gives both endpoints the same ability to send and receive repeated messages.
 The physical topology does not change.
 
+This is primarily an **application progression**, not a new Ethernet forwarding
+mechanism. The one-shot sender and observer become one long-running program on
+each computer. Both programs can send, receive and distinguish a display name
+from message text.
+
 The veth pair is the virtual cable. `alice-nic` and `bob-nic` are temporary
 names for its two interface ends; after each end moves into its computer's
 network namespace, it is renamed to the conventional `eth0` NIC.
@@ -33,9 +38,19 @@ separate terminals, then type into either one.
 - `chat.py` adds the minimal interactive terminal interface.
 - Verification now sends Alice→Bob and Bob→Alice through the real cable.
 
-The endpoints still know each other's MAC address in advance. That limitation
-is deliberate: discovery arrives only when a third participant makes fixed
-peer configuration inadequate.
+Every chat frame is unicast: Alice places Bob's MAC in the destination field,
+and Bob places Alice's MAC there when replying. The receiver now checks both
+questions that checkpoint 1 only displayed:
+
+1. Did this frame come from the one configured peer?
+2. Was this frame addressed to my own NIC?
+
+The sender name (`Alice` or `Bob`) is separate application data inside our
+payload. Ethernet does not interpret or authenticate it.
+
+The endpoints still know each other's names and MAC addresses in advance. This
+is a manually configured two-person conversation; discovery will later replace
+that configuration without replacing unicast chat.
 
 ## Code worth reading
 

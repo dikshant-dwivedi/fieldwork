@@ -1,8 +1,7 @@
 """Bidirectional chat transport over one direct Ethernet cable."""
 
-import fcntl
+from pathlib import Path
 import socket
-import struct
 
 from chat_protocol import ChatMessage, decode_message, encode_message
 from ethernet import (
@@ -13,17 +12,10 @@ from ethernet import (
 )
 
 
-SIOCGIFHWADDR = 0x8927
-
-
 def interface_mac(interface: str) -> bytes:
-    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        request = struct.pack("256s", interface[:15].encode("ascii"))
-        response = fcntl.ioctl(probe.fileno(), SIOCGIFHWADDR, request)
-        return response[18:24]
-    finally:
-        probe.close()
+    """Read this namespace's NIC address without using an IP-family socket."""
+    address = Path(f"/sys/class/net/{interface}/address").read_text().strip()
+    return mac_to_bytes(address)
 
 
 class DirectChat:
@@ -44,6 +36,8 @@ class DirectChat:
         self.socket.bind((interface, 0))
 
     def send(self, sender: str, text: str) -> None:
+        # The sender's display name and text belong to our application payload.
+        # Ethernet itself sees only bytes and the source/destination MACs.
         payload = encode_message(ChatMessage(sender, text))
         frame = build_ethernet_frame(self.own_mac, self.peer_mac, payload)
         self.socket.send(frame)
@@ -53,10 +47,14 @@ class DirectChat:
         while True:
             ethernet_frame = parse_ethernet_frame(self.socket.recv(2048))
 
-            # The peer MAC is fixed in this checkpoint. Automatic discovery is
-            # deliberately postponed until Carol creates that need.
+            # The peer MAC is supplied before startup in this checkpoint. This
+            # first check asks, "did the configured peer send the frame?"
             if ethernet_frame.source != self.peer_mac:
                 continue
+
+            # The second check asks, "was the frame addressed to my NIC?" The
+            # direct cable has only one other end, but the address still matters
+            # to the chat application's one-to-one rule.
             if ethernet_frame.destination != self.own_mac:
                 continue
             return decode_message(ethernet_frame.payload)
