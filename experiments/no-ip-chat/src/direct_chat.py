@@ -19,7 +19,11 @@ def interface_mac(interface: str) -> bytes:
 
 
 class DirectChat:
-    """The same send-and-receive capability used by Alice and Bob."""
+    """The same send-and-receive capability used by Alice and Bob.
+
+    High-level path: encode application payload → add Ethernet header → send.
+    The receive path reverses those steps, then applies the address checks.
+    """
 
     def __init__(self, interface: str, peer_mac: str) -> None:
         self.interface = interface
