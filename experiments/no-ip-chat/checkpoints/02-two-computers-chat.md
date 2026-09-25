@@ -31,6 +31,29 @@ make demo
 `make demo` prints two commands. Run `make chat-alice` and `make chat-bob` in
 separate terminals, then type into either one.
 
+## Execution map
+
+```text
+make chat-alice
+→ Makefile → vm.sh → Alice namespace → chat.py main()
+→ DirectChat(interface, Bob's configured MAC)
+→ main thread reads typed text; receiver thread waits for frames
+
+typed text → DirectChat.send(...)
+→ chat_protocol.encode_message(...) creates payload
+→ ethernet.build_ethernet_frame(...) adds header
+→ raw socket.send(frame)
+
+arriving bytes → DirectChat.receive()
+→ ethernet.parse_ethernet_frame(...)
+→ require configured source + my destination
+→ chat_protocol.decode_message(...)
+→ chat.py displays it
+```
+
+Read `chat.py` first, jump into the two `DirectChat` operations, and only then
+open the protocol and Ethernet helper definitions they call.
+
 ## What changed
 
 - `chat_protocol.py` defines how sender names and text become payload bytes.

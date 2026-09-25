@@ -26,6 +26,7 @@ def main() -> None:
     parser.add_argument("--message", default="hello from Alice")
     args = parser.parse_args()
 
+    # 1. Identify NICs. 2. Build payload + header. 3. Send complete frame.
     source = interface_mac(args.interface)
     destination = mac_to_bytes(args.destination)
     frame = build_frame(source, destination, args.message)
